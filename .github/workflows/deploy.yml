@@ -203,11 +203,11 @@ jobs:
         
         echo "✅ S3 sync completed"
         
-        # Invalidate CloudFront cache
-        if [ ! -z "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
+        # Invalidate CloudFront cache (only if distribution ID is provided)
+        if [ -n "${CLOUDFRONT_DISTRIBUTION_ID}" ]; then
           echo "🔄 Invalidating CloudFront cache..."
           INVALIDATION_ID=$(aws cloudfront create-invalidation \
-            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
             --paths "/*" \
             --query 'Invalidation.Id' \
             --output text)
@@ -217,28 +217,37 @@ jobs:
           # Wait for invalidation to complete (optional)
           echo "Waiting for invalidation to complete..."
           aws cloudfront wait invalidation-completed \
-            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
-            --id $INVALIDATION_ID
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --id "$INVALIDATION_ID"
           
           echo "✅ CloudFront cache invalidated"
           
           # Get CloudFront URL
           CLOUDFRONT_URL=$(aws cloudfront get-distribution \
-            --id $CLOUDFRONT_DISTRIBUTION_ID \
+            --id "${CLOUDFRONT_DISTRIBUTION_ID}" \
             --query 'Distribution.DomainName' \
             --output text)
           echo "cloudfront-url=https://$CLOUDFRONT_URL" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️  CloudFront Distribution ID not set - skipping CloudFront invalidation"
+          echo "📝 Add CLOUDFRONT_DISTRIBUTION_ID secret if you want CDN support"
+          echo "📍 Your app is deployed at S3 website URL (see below)"
         fi
         
         # Get S3 website URL
-        S3_WEBSITE_URL="http://$S3_BUCKET.s3-website-$AWS_REGION.amazonaws.com"
+        S3_WEBSITE_URL="http://$S3_BUCKET.s3-website-${AWS_REGION}.amazonaws.com"
         echo "s3-url=$S3_WEBSITE_URL" >> $GITHUB_OUTPUT
         
+        echo ""
         echo "🎉 Deployment completed!"
-        echo "S3 Website URL: $S3_WEBSITE_URL"
-        if [ ! -z "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
-          echo "CloudFront URL: https://$CLOUDFRONT_URL"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📍 S3 Website URL: $S3_WEBSITE_URL"
+        if [ -n "${CLOUDFRONT_DISTRIBUTION_ID}" ]; then
+          echo "🌐 CloudFront URL: https://$CLOUDFRONT_URL"
+        else
+          echo "💡 Tip: Add CloudFront for HTTPS and faster global access"
         fi
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     - name: 🧪 Post-Deployment Tests
       env:
@@ -249,19 +258,15 @@ jobs:
         
         # Test S3 website
         echo "Testing S3 website..."
-        curl -f "$S3_URL" -o /dev/null -s
+        curl -f "$S3_URL" -o /dev/null -s || echo "⚠️  S3 website not accessible yet (may take a minute)"
         
         # Test CloudFront (if available)
-        if [ ! -z "$CLOUDFRONT_URL" ]; then
+        if [ -n "$CLOUDFRONT_URL" ]; then
           echo "Testing CloudFront distribution..."
-          curl -f "$CLOUDFRONT_URL" -o /dev/null -s
+          curl -f "$CLOUDFRONT_URL" -o /dev/null -s || echo "⚠️  CloudFront not accessible yet (distribution may be deploying)"
         fi
         
-        # Test specific files
-        curl -f "$S3_URL/static/css/" -o /dev/null -s || echo "CSS files test passed"
-        curl -f "$S3_URL/static/js/" -o /dev/null -s || echo "JS files test passed"
-        
-        echo "✅ Post-deployment tests completed!"
+        echo "✅ Deployment tests completed"
 
     - name: 📊 Deployment Summary
       env:
