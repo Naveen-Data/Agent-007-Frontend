@@ -187,11 +187,13 @@ jobs:
         # Upload static assets with long cache (1 year)
         aws s3 sync build/static/ s3://$S3_BUCKET/static/ \
           --cache-control "public, max-age=31536000, immutable" \
+          --acl public-read \
           --delete
         
         # Upload HTML files with short cache (5 minutes)
         aws s3 sync build/ s3://$S3_BUCKET/ \
           --cache-control "public, max-age=300, must-revalidate" \
+          --acl public-read \
           --exclude "static/*" \
           --delete
         
@@ -199,6 +201,7 @@ jobs:
         aws s3 cp s3://$S3_BUCKET/index.html s3://$S3_BUCKET/index.html \
           --content-type "text/html" \
           --cache-control "public, max-age=300, must-revalidate" \
+          --acl public-read \
           --metadata-directive REPLACE
         
         echo "✅ S3 sync completed"
