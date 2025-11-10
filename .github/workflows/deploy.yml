@@ -203,31 +203,39 @@ jobs:
         
         echo "✅ S3 sync completed"
         
-        # Invalidate CloudFront cache (only if distribution ID is provided)
-        if [ -n "${CLOUDFRONT_DISTRIBUTION_ID}" ]; then
-          echo "🔄 Invalidating CloudFront cache..."
-          INVALIDATION_ID=$(aws cloudfront create-invalidation \
-            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
-            --paths "/*" \
-            --query 'Invalidation.Id' \
-            --output text)
+        # Invalidate CloudFront cache (only if distribution ID is provided and valid)
+        if [ -n "${CLOUDFRONT_DISTRIBUTION_ID}" ] && [ "${CLOUDFRONT_DISTRIBUTION_ID}" != "null" ] && [ "${CLOUDFRONT_DISTRIBUTION_ID}" != "" ]; then
+          echo "🔄 Invalidating CloudFront cache for distribution: ${CLOUDFRONT_DISTRIBUTION_ID}"
           
-          echo "CloudFront invalidation created: $INVALIDATION_ID"
-          
-          # Wait for invalidation to complete (optional)
-          echo "Waiting for invalidation to complete..."
-          aws cloudfront wait invalidation-completed \
-            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
-            --id "$INVALIDATION_ID"
-          
-          echo "✅ CloudFront cache invalidated"
-          
-          # Get CloudFront URL
-          CLOUDFRONT_URL=$(aws cloudfront get-distribution \
-            --id "${CLOUDFRONT_DISTRIBUTION_ID}" \
-            --query 'Distribution.DomainName' \
-            --output text)
-          echo "cloudfront-url=https://$CLOUDFRONT_URL" >> $GITHUB_OUTPUT
+          # Verify the distribution exists before creating invalidation
+          if aws cloudfront get-distribution --id "${CLOUDFRONT_DISTRIBUTION_ID}" &>/dev/null; then
+            INVALIDATION_ID=$(aws cloudfront create-invalidation \
+              --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+              --paths "/*" \
+              --query 'Invalidation.Id' \
+              --output text)
+            
+            echo "CloudFront invalidation created: $INVALIDATION_ID"
+            
+            # Wait for invalidation to complete (optional)
+            echo "Waiting for invalidation to complete..."
+            aws cloudfront wait invalidation-completed \
+              --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+              --id "$INVALIDATION_ID"
+            
+            echo "✅ CloudFront cache invalidated"
+            
+            # Get CloudFront URL
+            CLOUDFRONT_URL=$(aws cloudfront get-distribution \
+              --id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+              --query 'Distribution.DomainName' \
+              --output text)
+            echo "cloudfront-url=https://$CLOUDFRONT_URL" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  CloudFront Distribution ID '${CLOUDFRONT_DISTRIBUTION_ID}' does not exist"
+            echo "📝 Please verify your CLOUDFRONT_DISTRIBUTION_ID secret or remove it to skip CloudFront"
+            echo "📍 Your app is still deployed at S3 website URL (see below)"
+          fi
         else
           echo "⚠️  CloudFront Distribution ID not set - skipping CloudFront invalidation"
           echo "📝 Add CLOUDFRONT_DISTRIBUTION_ID secret if you want CDN support"
