@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Dynamic API URL configuration
 const getApiBaseUrl = () => {
-  // Production: Use environment variable
+  // Production: Use environment variable (set during build by GitHub Actions)
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
   }
@@ -15,7 +15,7 @@ const getApiBaseUrl = () => {
   // Fallback for production builds without env vars
   return window.location.origin.includes('localhost') 
     ? 'http://localhost:8000'
-    : 'https://your-backend-url.awsapprunner.com'; // Update this after deployment
+    : 'http://YOUR_EC2_IP:8000'; // Will be replaced by REACT_APP_API_URL during build
 };
 
 const API_BASE_URL = getApiBaseUrl();

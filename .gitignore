@@ -109,7 +109,7 @@ jspm_packages/
 # Deployment and CI/CD
 *.pem
 *.key
-deploy-*.sh
+.deployment-config
 
 # AWS CLI
 .aws/

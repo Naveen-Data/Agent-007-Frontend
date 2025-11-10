@@ -2,6 +2,20 @@
 
 🎨 Modern React TypeScript frontend for the Mr Agent 007 AI chatbot with Material-UI design.
 
+## 🚀 Quick Deployment
+
+**Backend deployed on EC2? Deploy your frontend now!**
+
+```bash
+./scripts/setup-github-secrets.sh
+git push origin main
+```
+
+📖 **See [QUICK_START.md](./QUICK_START.md) for step-by-step deployment guide**
+📚 **See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed documentation**
+
+---
+
 ## Features
 
 - 🎨 Modern Material-UI interface
@@ -9,6 +23,8 @@
 - 🔧 Multiple agent modes (RAG, Tools, Heavy)
 - 🟢 Connection status indicator
 - 📱 Responsive design
+- ☁️ Deployed on AWS S3 + CloudFront
+- 🔄 Automated CI/CD with GitHub Actions
 
 ## Prerequisites
 
