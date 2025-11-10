@@ -8,7 +8,7 @@ on:
       - 'public/**'
       - 'package.json'
       - 'package-lock.json'
-      - '.github/workflows/frontend-deploy.yml'
+      - '.github/workflows/deploy.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -85,11 +85,13 @@ jobs:
     - name: 📦 Upload Test Artifacts
       uses: actions/upload-artifact@v4
       if: always()
+      continue-on-error: true
       with:
         name: test-results
         path: |
           coverage/
           build/bundle-report.html
+        if-no-files-found: ignore
 
   # Build for Production
   build:
