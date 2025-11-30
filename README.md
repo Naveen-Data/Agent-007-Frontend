@@ -105,4 +105,4 @@ frontend/
 
 ### Port Conflicts
 - If port 3000 is busy, React will automatically suggest another port
-- You can set a custom port: `PORT=3001 npm start`
+- You can set a custom port: `PORT=3001 npm start`# Updated API configuration Sun Nov 30 13:24:36 IST 2025
